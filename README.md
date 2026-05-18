@@ -51,3 +51,17 @@ Add dashboard screenshots after running the app locally.
 - How to model workflow-oriented UI state in TypeScript
 - How to persist app state with LocalStorage
 - How to compose reusable dashboard components with Tailwind utilities
+
+
+## Merge Conflict Recovery
+If your PR shows merge conflicts, sync this branch with the target branch and resolve conflicts before pushing:
+
+```bash
+git fetch origin
+git checkout work
+git merge origin/main
+# resolve conflicts in README.md, src/App.tsx, src/index.css
+git add README.md src/App.tsx src/index.css
+git commit -m "Resolve merge conflicts with main"
+git push origin work
+```

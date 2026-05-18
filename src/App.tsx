@@ -15,6 +15,8 @@ interface Ticket {
 }
 
 const STORAGE_KEY = 'it-support-tickets-v1';
+const STATUS_OPTIONS: Status[] = ['Open', 'In Progress', 'Resolved'];
+const PRIORITY_OPTIONS: Priority[] = ['Low', 'Medium', 'High', 'Critical'];
 
 const seed: Ticket[] = [
   {
@@ -62,11 +64,16 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (tickets.length > 0) localStorage.setItem(STORAGE_KEY, JSON.stringify(tickets));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(tickets));
   }, [tickets]);
 
   const visibleTickets = useMemo(
-    () => tickets.filter((t) => (statusFilter === 'All' || t.status === statusFilter) && (priorityFilter === 'All' || t.priority === priorityFilter)),
+    () =>
+      tickets.filter(
+        (t) =>
+          (statusFilter === 'All' || t.status === statusFilter) &&
+          (priorityFilter === 'All' || t.priority === priorityFilter),
+      ),
     [tickets, statusFilter, priorityFilter],
   );
 
@@ -74,10 +81,18 @@ function App() {
     const open = tickets.filter((t) => t.status === 'Open').length;
     const inProgress = tickets.filter((t) => t.status === 'In Progress').length;
     const resolved = tickets.filter((t) => t.status === 'Resolved').length;
-    return { total: tickets.length, open, inProgress, resolved, completionRate: tickets.length ? Math.round((resolved / tickets.length) * 100) : 0 };
+    return {
+      total: tickets.length,
+      open,
+      inProgress,
+      resolved,
+      completionRate: tickets.length ? Math.round((resolved / tickets.length) * 100) : 0,
+    };
   }, [tickets]);
 
-  const updateStatus = (id: string, status: Status) => setTickets((curr) => curr.map((t) => (t.id === id ? { ...t, status } : t)));
+  const updateStatus = (id: string, status: Status) => {
+    setTickets((curr) => curr.map((t) => (t.id === id ? { ...t, status } : t)));
+  };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -92,7 +107,9 @@ function App() {
       status: 'Open',
       createdAt: new Date().toISOString(),
     };
+
     if (!ticket.title || !ticket.requester || !ticket.assignee) return;
+
     setTickets((current) => [ticket, ...current]);
     event.currentTarget.reset();
   };
@@ -102,11 +119,16 @@ function App() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(56,189,248,0.2),transparent_30%),radial-gradient(circle_at_85%_20%,rgba(168,85,247,0.25),transparent_40%),radial-gradient(circle_at_50%_100%,rgba(14,165,233,0.2),transparent_30%)]" />
       <div className="relative mx-auto max-w-7xl space-y-8 p-6 md:p-10">
         <header className="glass rounded-3xl p-8">
-          <p className="mb-3 inline-block rounded-full bg-sky-400/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-sky-200">Support Operations Suite</p>
+          <p className="chip">Support Operations Suite</p>
           <h1 className="text-4xl font-black tracking-tight md:text-5xl">IT Support Ticket Dashboard</h1>
-          <p className="mt-3 max-w-2xl text-slate-300">A polished workflow console to create, prioritize, assign, and resolve incidents with confidence.</p>
+          <p className="mt-3 max-w-2xl text-slate-300">
+            A polished workflow console to create, prioritize, assign, and resolve incidents with confidence.
+          </p>
           <div className="mt-6 h-3 overflow-hidden rounded-full bg-white/10">
-            <div className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-indigo-500 to-fuchsia-500" style={{ width: `${metrics.completionRate}%` }} />
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-indigo-500 to-fuchsia-500"
+              style={{ width: `${metrics.completionRate}%` }}
+            />
           </div>
           <p className="mt-2 text-sm text-slate-400">Resolution rate: {metrics.completionRate}%</p>
         </header>
@@ -118,8 +140,14 @@ function App() {
             ['In Progress', metrics.inProgress, 'from-violet-400 to-fuchsia-400'],
             ['Resolved', metrics.resolved, 'from-emerald-400 to-lime-300'],
           ].map(([label, value, color]) => (
-            <article key={String(label)} className="glass group rounded-2xl p-5">
-              <p className={`bg-gradient-to-r ${color} bg-clip-text text-sm font-semibold uppercase tracking-wider text-transparent`}>{label}</p>
+            <article key={String(label)} className="glass rounded-2xl p-5">
+              <p
+                className={`bg-gradient-to-r ${String(
+                  color,
+                )} bg-clip-text text-sm font-semibold uppercase tracking-wider text-transparent`}
+              >
+                {label}
+              </p>
               <p className="mt-2 text-4xl font-black">{value}</p>
             </article>
           ))}
@@ -142,10 +170,12 @@ function App() {
               <label className="block text-sm">
                 <span className="mb-1 block text-slate-300">Priority</span>
                 <select name="priority" className="input-glass">
-                  <option>Low</option><option>Medium</option><option>High</option><option>Critical</option>
+                  {PRIORITY_OPTIONS.map((priority) => (
+                    <option key={priority}>{priority}</option>
+                  ))}
                 </select>
               </label>
-              <button className="w-full rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-500 px-4 py-2.5 font-semibold text-white shadow-lg shadow-indigo-900/40 transition hover:brightness-110">Create Ticket</button>
+              <button className="btn-primary w-full">Create Ticket</button>
             </div>
           </form>
 
@@ -153,8 +183,26 @@ function App() {
             <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
               <h2 className="text-xl font-bold">Ticket Queue</h2>
               <div className="flex gap-2">
-                <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as 'All' | Status)} className="input-glass text-sm"><option>All</option><option>Open</option><option>In Progress</option><option>Resolved</option></select>
-                <select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value as 'All' | Priority)} className="input-glass text-sm"><option>All</option><option>Low</option><option>Medium</option><option>High</option><option>Critical</option></select>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as 'All' | Status)}
+                  className="input-glass text-sm"
+                >
+                  <option>All</option>
+                  {STATUS_OPTIONS.map((status) => (
+                    <option key={status}>{status}</option>
+                  ))}
+                </select>
+                <select
+                  value={priorityFilter}
+                  onChange={(e) => setPriorityFilter(e.target.value as 'All' | Priority)}
+                  className="input-glass text-sm"
+                >
+                  <option>All</option>
+                  {PRIORITY_OPTIONS.map((priority) => (
+                    <option key={priority}>{priority}</option>
+                  ))}
+                </select>
               </div>
             </div>
             <div className="space-y-3">
@@ -163,15 +211,29 @@ function App() {
                   <div className="flex flex-wrap justify-between gap-2">
                     <div>
                       <h3 className="text-lg font-semibold">{ticket.title}</h3>
-                      <p className="text-xs text-slate-400">{ticket.id} · {new Date(ticket.createdAt).toLocaleString()}</p>
+                      <p className="text-xs text-slate-400">
+                        {ticket.id} · {new Date(ticket.createdAt).toLocaleString()}
+                      </p>
                     </div>
-                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${priorityColors[ticket.priority]}`}>{ticket.priority}</span>
+                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${priorityColors[ticket.priority]}`}>
+                      {ticket.priority}
+                    </span>
                   </div>
                   <p className="mt-2 text-sm text-slate-300">{ticket.description || 'No description provided.'}</p>
-                  <p className="mt-2 text-sm text-slate-300">Requester: <strong>{ticket.requester}</strong> · Assignee: <strong>{ticket.assignee}</strong></p>
+                  <p className="mt-2 text-sm text-slate-300">
+                    Requester: <strong>{ticket.requester}</strong> · Assignee: <strong>{ticket.assignee}</strong>
+                  </p>
                   <div className="mt-3 flex flex-wrap items-center gap-2">
-                    {(['Open', 'In Progress', 'Resolved'] as Status[]).map((status) => (
-                      <button key={status} onClick={() => updateStatus(ticket.id, status)} className={`rounded-full px-3 py-1 text-xs font-semibold transition ${ticket.status === status ? 'bg-indigo-500 text-white' : 'bg-white/10 text-slate-300 hover:bg-white/20'}`}>
+                    {STATUS_OPTIONS.map((status) => (
+                      <button
+                        key={status}
+                        onClick={() => updateStatus(ticket.id, status)}
+                        className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                          ticket.status === status
+                            ? 'bg-indigo-500 text-white'
+                            : 'bg-white/10 text-slate-300 hover:bg-white/20'
+                        }`}
+                      >
                         {status}
                       </button>
                     ))}
